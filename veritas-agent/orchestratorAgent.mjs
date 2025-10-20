@@ -30,7 +30,7 @@ import { createPromptReader } from './lib/prompt-reader.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SKILLS_DIRECTORY = path.resolve(__dirname, 'skills');
-const SESSION_KEY = 'veritasAgent.session';
+const SESSION_KEY = 'orchestratorAgent.session';
 
 // Create LLMAgent instance
 const llmAgent = new LLMAgent({
@@ -53,11 +53,7 @@ const agent = new SkilledAgent({
         // No action needed here to avoid interfering with the output stream.
     }
 });
-const baseServices = {
-    ...getSkillServices(),
-    llmAgent
-};
-setSkillServices(baseServices);
+const baseServices = getSkillServices();
 const roleDirectory = new Map();
 
 // Make agent available globally for help skill
@@ -237,7 +233,7 @@ function buildOptionsResolver(skillModule = {}) {
 
         const providers = {};
         const result = {};
-        
+
         for (const [argumentName, definition] of Object.entries(args)) {
             // Handle enumerator property directly in the argument definition
             if (typeof definition?.enumerator === 'function') {
@@ -250,7 +246,7 @@ function buildOptionsResolver(skillModule = {}) {
                 }
                 continue;
             }
-            
+
             // Handle type='%providerName' pattern
             const typeName = typeof definition?.type === 'string' ? definition.type : '';
             if (typeName.startsWith('%')) {
@@ -265,7 +261,7 @@ function buildOptionsResolver(skillModule = {}) {
 
         // Resolve %provider-based options
         const providerOptions = await resolveArgumentOptions(specDefinition, providers);
-        
+
         // Merge enumerator-based and provider-based options
         return { ...result, ...providerOptions };
     };
@@ -633,7 +629,7 @@ async function interactiveLoop(initialUser) {
                         query: taskDescription,
                         mode: 'fast'
                     });
-                    
+
                     // If LLM returns 'none', no skill is appropriate
                     if (selectedSkill === 'none') {
                         selectedSkill = null;
