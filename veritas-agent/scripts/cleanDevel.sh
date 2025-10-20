@@ -7,3 +7,4 @@ podman rm -f -a
 rm -rf .ploinky
 rm -rf veritas-agent
 rm -rf keycloak
+rm -rf postgres
