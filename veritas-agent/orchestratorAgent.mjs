@@ -10,6 +10,7 @@ import {
     setSkillServices,
     ensurePersistoSchema as ensurePersistoSchemaRuntime
 } from './lib/runtime.mjs';
+import { initLlamaIndex } from './lib/llamaindex-context.mjs';
 import { resolveArgumentOptions } from './lib/argument-options.mjs';
 import {
     getSkillDiscoveryLogger,
@@ -53,7 +54,20 @@ const agent = new SkilledAgent({
         // No action needed here to avoid interfering with the output stream.
     }
 });
-const baseServices = getSkillServices();
+const baseServices = {
+    ...getSkillServices(),
+    llmAgent
+};
+
+try {
+    const llamaIndexContext = await initLlamaIndex();
+    baseServices.llamaIndex = llamaIndexContext;
+    console.log('[LlamaIndex] Initialized', llamaIndexContext.models);
+} catch (error) {
+    console.warn('[LlamaIndex] Initialization skipped:', error.message);
+}
+
+setSkillServices(baseServices);
 const roleDirectory = new Map();
 
 // Make agent available globally for help skill
