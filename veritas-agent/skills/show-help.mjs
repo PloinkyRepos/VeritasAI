@@ -20,7 +20,7 @@ export function specs() {
 }
 
 export function roles() {
-    return ['KnowledgeAdmin', 'Analyst', 'Reviewer', 'Auditor'];
+    return ['sysAdmin'];
 }
 
 export async function action({ query } = {}) {

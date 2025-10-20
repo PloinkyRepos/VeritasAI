@@ -2,7 +2,7 @@
 set -e
 
 # Add and enable VeritasAI repository
-ploinky add repo veritasAI https://github.com/OutfinityResearch/VeritasAI
+ploinky add repo veritasAI https://github.com/PloinkyRepos/VeritasAI
 ploinky enable repo veritasAI
 
 # OpenAI API Key

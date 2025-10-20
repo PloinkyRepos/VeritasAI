@@ -124,13 +124,13 @@
       },
       {
         "id": "0ec7ca74-03b5-49cb-80dc-5e93ec15bf94",
-        "name": "systemadmin",
-        "description": "systemadmin role",
+        "name": "sysAdmin",
+        "description": "sysAdmin role",
         "composite": false,
         "clientRole": false,
         "containerId": "c6c2b5d5-caa7-4ebb-98bf-09d7728c4fef",
         "attributes": {}
-      },
+    },
       {
         "id": "54fb4bbe-9b47-480c-b324-b488fa92c2c1",
         "name": "viewer",

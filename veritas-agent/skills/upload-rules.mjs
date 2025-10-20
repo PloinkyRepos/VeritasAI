@@ -244,7 +244,7 @@ export function specs() {
 }
 
 export function roles() {
-    return ['KnowledgeAdmin'];
+    return ['sysAdmin'];
 }
 
 export async function action({ file, rules, facts, source } = {}) {

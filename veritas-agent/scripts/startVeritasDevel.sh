@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ploinky add repo veritasAI https://github.com/OutfinityResearch/VeritasAI
+ploinky add repo veritasAI https://github.com/PloinkyRepos/VeritasAI
 ploinky enable repo veritasAI
 
 ploinky var OPENAI_API_KEY "sk-01234567890123456789012345678901"

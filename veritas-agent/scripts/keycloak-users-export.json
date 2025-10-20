@@ -13,7 +13,7 @@
       "attributes": {},
       "realmRoles": [
         "default-roles-ploinky",
-        "systemadmin"
+        "sysAdmin"
       ],
       "clientRoles": {},
       "groups": [],

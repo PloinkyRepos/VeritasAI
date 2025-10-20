@@ -56,7 +56,7 @@ export function specs() {
 }
 
 export function roles() {
-    return ['Analyst', 'Auditor', 'KnowledgeAdmin'];
+    return ['sysAdmin'];
 }
 
 export async function action({ document, highlights } = {}) {

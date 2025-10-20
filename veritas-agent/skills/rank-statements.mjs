@@ -40,7 +40,7 @@ export function specs() {
 }
 
 export function roles() {
-    return ['Analyst', 'Reviewer', 'Auditor', 'KnowledgeAdmin'];
+    return ['sysAdmin'];
 }
 
 function buildPrompt({ document, facts, count }) {
