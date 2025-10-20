@@ -1,0 +1,31 @@
+{
+  "realm": "ploinky",
+  "exportedAt": "2025-10-09T10:06:47.780233+00:00",
+  "userCount": 1,
+  "users": [
+    {
+      "id": "84d5ebd3-60e2-470a-b7a2-98dfa1979f68",
+      "username": "sysadmin",
+      "email": "sysadmin@veritas.ai",
+      "enabled": true,
+      "firstName": "System",
+      "lastName": "Admin",
+      "attributes": {},
+      "realmRoles": [
+        "default-roles-ploinky",
+        "systemadmin"
+      ],
+      "clientRoles": {},
+      "groups": [],
+      "credentials": [
+        {
+          "id": "ec59a628-0ae5-4e36-9f43-97ea8b884b29",
+          "type": "password",
+          "userLabel": "My password",
+          "createdDate": 1760002846826,
+          "credentialData": "{\"hashIterations\":210000,\"algorithm\":\"pbkdf2-sha512\",\"additionalParameters\":{}}"
+        }
+      ]
+    }
+  ]
+}

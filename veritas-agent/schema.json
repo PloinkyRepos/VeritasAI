@@ -1,0 +1,70 @@
+{
+    "version": 1,
+    "types": {
+        "rule": {
+            "rule_id": "string",
+            "title": "string",
+            "content": "string",
+            "source": "string",
+            "tags": "string",
+            "created_at": "string"
+        },
+        "fact": {
+            "fact_id": "string",
+            "content": "string",
+            "source": "string",
+            "document_id": "string",
+            "rule_id": "string",
+            "confidence": "number",
+            "tags": "string",
+            "created_at": "string"
+        },
+        "document": {
+            "document_id": "string",
+            "title": "string",
+            "content": "string",
+            "summary": "string",
+            "source": "string",
+            "ingested_at": "string"
+        },
+        "assessmentLog": {
+            "assessment_id": "string",
+            "target_type": "string",
+            "target_reference": "string",
+            "statement": "string",
+            "verdict": "string",
+            "supporting_fact_ids": "string",
+            "contradicting_fact_ids": "string",
+            "notes": "string",
+            "created_at": "string"
+        }
+    },
+    "indexes": {
+        "rule": "rule_id",
+        "fact": "fact_id",
+        "document": "document_id",
+        "assessmentLog": "assessment_id"
+    },
+    "groupings": {
+        "fact": [
+            {
+                "name": "factsByDocument",
+                "field": "document_id"
+            },
+            {
+                "name": "factsByRule",
+                "field": "rule_id"
+            }
+        ],
+        "assessmentLog": [
+            {
+                "name": "assessmentsByTarget",
+                "field": "target_reference"
+            },
+            {
+                "name": "assessmentsByType",
+                "field": "target_type"
+            }
+        ]
+    }
+}
