@@ -1,0 +1,9 @@
+{
+    "container": "docker.io/timbru31/node-alpine-git:22",
+    "install": "/code/install.sh",
+    "env": {
+        "OPENAI_API_KEY": null,
+        "NODE_PATH": "/code/vendor"
+    },
+    "agent": "node ./code/server.js"
+}
