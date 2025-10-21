@@ -20,7 +20,7 @@ function printSupport(entries) {
 export function specs() {
     return {
         name: 'validate-statement',
-        needConfirmation: false,
+        needConfirmation: true,
         description: 'Retrieve evidence that confirms the supplied statement.',
         why: 'Provides quick proof or validation for critical claims.',
         what: 'Finds supporting facts and reports the validation verdict.',
