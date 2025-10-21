@@ -59,5 +59,6 @@ export async function action({ statement } = {}) {
     console.log('Validating statement:', statement);
     const { ragService, getStrategy } = getSkillServices();
     const mockStrategy = getStrategy('mock');
-    return mockStrategy.processStatement('validate-statement', { statement });
+     const response  = await mockStrategy.processStatement('validate-statement', { statement });
+     return { success: true, result: response.result };
 }
