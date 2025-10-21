@@ -205,7 +205,7 @@ export function printAvailableActions(agent, user, query = '') {
     if (!trimmedQuery) {
         console.log('💡 **Tip:** Just describe what you want to do in natural language!');
         console.log('');
-        console.log('Examples: *"check inventory levels"*, *"create a job for Smith Construction"*');
+        console.log('Examples: *"check inventory levels"*, *"Find evidence for "*');
         console.log('');
     }
 }
