@@ -729,7 +729,7 @@ async function main() {
     // with better enumerator support.
 
     await registerSkills(agent);
-    try {
+/*    try {
         await ensurePersistoSchemaRuntime();
     } catch (error) {
         if (process.env.LLMAgentClient_DEBUG === 'true') {
@@ -737,7 +737,7 @@ async function main() {
         } else {
             console.log('Skipping schema verification because the data service is unavailable.');
         }
-    }
+    }*/
 
     // Try CLI arguments first (for webchat sessions with SSO)
     let user = null;

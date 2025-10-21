@@ -1,20 +1,17 @@
-import {getStrategy} from '../lib/strategy-registry.mjs';
+import { resolveStrategy, tryGetLlmAgent } from '../lib/skill-utils.mjs';
 
-function printSupport(entries, heading = 'Supporting facts') {
-    if (!entries.length) {
-        console.log(`No ${heading.toLowerCase()} were found.`);
-        return;
-    }
-    console.log(`${heading}:`);
-    for (const item of entries) {
-        console.log(`- [${item.fact_id}] ${item.content}`);
-        if (item.explanation) {
-            console.log(`  Reason: ${item.explanation}`);
-        }
-        if (item.source) {
-            console.log(`  Source: ${item.source}`);
-        }
-    }
+function fallbackReport(statement, citations) {
+    const header = '# Validation Brief';
+    const statementSection = `## Statement\n${statement}`;
+    const evidenceSection = citations.length
+        ? `## Supporting Evidence\n${citations.map(entry => `- **${entry.fact_id}**: ${entry.content}${entry.source ? ` _(source: ${entry.source})_` : ''}${entry.explanation ? `\n  - Rationale: ${entry.explanation}` : ''}`).join('\n')}`
+        : '## Supporting Evidence\n- No supporting citations were found for this statement.';
+    const confidence = citations.length ? 'medium' : 'insufficient';
+    const confidenceSection = `## Confidence\n${confidence}`;
+    const nextSteps = citations.length
+        ? '## Next Steps\n- Review cited sources for completeness.\n- Consider collecting additional evidence if higher assurance is needed.'
+        : '## Next Steps\n- Gather more data points or confirm the statement with subject matter experts.';
+    return [header, statementSection, evidenceSection, confidenceSection, nextSteps].join('\n\n');
 }
 
 function meaningfulStatement(value = '') {
@@ -57,12 +54,52 @@ export function roles() {
 }
 
 export async function action(statement) {
-    console.log('Validating statement:', statement);
-    const mockStrategy = getStrategy('mock');
-    const response = await mockStrategy.processStatement('validate-statement', {statement});
-    if (response.result && Array.isArray(response.result.supporting)) {
-        printSupport(response.result.supporting);
+    const strategy = resolveStrategy(['default', 'simple-llm']);
+    const citations = await strategy.getEvidencesForStatement(statement);
+
+    const llmAgent = tryGetLlmAgent();
+    const payload = {
+        statement,
+        citations: citations.map(item => ({
+            id: item.fact_id,
+            type: item.type,
+            source: item.source,
+            explanation: item.explanation,
+            content: item.content
+        }))
+    };
+
+    let report = fallbackReport(statement, citations);
+    if (llmAgent) {
+        try {
+            const description = [
+                'Produce a concise Markdown validation brief for the provided statement and supporting citations.',
+                'Required sections: # Validation Brief, ## Statement, ## Supporting Evidence, ## Confidence, ## Next Steps.',
+                'Summarise overall confidence as high/medium/low based on evidence strength.',
+                'Use bullet points for evidence. If citations list is empty, clearly state that evidence is insufficient.',
+                'Do not invent sources or IDs.'
+            ].join('\n');
+            const history = [{
+                role: 'user',
+                message: `Provide the report for this JSON payload:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``
+            }];
+            report = await llmAgent.doTask(
+                { skill: 'validate-statement', intent: 'validate', statement },
+                description,
+                { mode: 'precision', history }
+            );
+        } catch (error) {
+            console.warn('Falling back to static report generator:', error.message);
+        }
     }
-    console.log('Validation result:', response.result);
-    return {success: true, result: response.result};
+
+    console.log(report);
+    return {
+        success: true,
+        result: {
+            statement,
+            citations,
+            report
+        }
+    };
 }

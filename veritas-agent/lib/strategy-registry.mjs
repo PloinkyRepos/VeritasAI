@@ -1,4 +1,10 @@
+import { KnowledgeStore } from './knowledge-store.mjs';
+import { SimpleLLmStrategy } from './strategies/simple-llm-strategy.mjs';
+import { getSkillServices } from './runtime.mjs';
+
 const strategies = new Map();
+let defaultKnowledgeStore = null;
+let simpleStrategyInstance = null;
 
 function normalizeStrategyArgs(defaultSkillName, skillNameOrOptions, maybeOptions) {
     if (skillNameOrOptions && typeof skillNameOrOptions === 'object') {
@@ -37,7 +43,24 @@ function getStrategy(name) {
 
 function initializeStrategies() {
     registerStrategy('mock', new MockStrategy());
-    // Future strategies can be registered here
+
+    if (!defaultKnowledgeStore) {
+        defaultKnowledgeStore = new KnowledgeStore();
+    }
+
+    const services = getSkillServices();
+    if (!simpleStrategyInstance) {
+        simpleStrategyInstance = new SimpleLLmStrategy({
+            knowledgeStore: defaultKnowledgeStore,
+            llmAgent: services?.llmAgent || null,
+            logger: services?.logger || null
+        });
+    } else if (!simpleStrategyInstance.llmAgent && services?.llmAgent) {
+        simpleStrategyInstance.llmAgent = services.llmAgent;
+    }
+
+    registerStrategy('simple-llm', simpleStrategyInstance);
+    registerStrategy('default', simpleStrategyInstance);
 }
 
 export {

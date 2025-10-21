@@ -1,20 +1,17 @@
-import {getStrategy} from '../lib/strategy-registry.mjs';
+import { resolveStrategy, tryGetLlmAgent } from '../lib/skill-utils.mjs';
 
-function printSupport(entries, heading = 'Contradicting facts') {
-    if (!entries.length) {
-        console.log(`No ${heading.toLowerCase()} were found.`);
-        return;
-    }
-    console.log(`${heading}:`);
-    for (const item of entries) {
-        console.log(`- [${item.fact_id}] ${item.content}`);
-        if (item.explanation) {
-            console.log(`  Reason: ${item.explanation}`);
-        }
-        if (item.source) {
-            console.log(`  Source: ${item.source}`);
-        }
-    }
+function fallbackReport(statement, citations) {
+    const header = '# Challenge Brief';
+    const statementSection = `## Statement\n${statement}`;
+    const contradictions = citations.length
+        ? `## Contradicting Evidence\n${citations.map(item => `- **${item.fact_id}**: ${item.content}${item.source ? ` _(source: ${item.source})_` : ''}${item.explanation ? `\n  - Rationale: ${item.explanation}` : ''}`).join('\n')}`
+        : '## Contradicting Evidence\n- No contradictions were located in the current knowledge base.';
+    const riskLevel = citations.length ? 'medium' : 'uncertain';
+    const riskSection = `## Risk Assessment\n${riskLevel}`;
+    const nextSteps = citations.length
+        ? '## Recommended Actions\n- Investigate cited contradictions and address any conflicts.\n- Confirm sources to determine severity.'
+        : '## Recommended Actions\n- Capture additional evidence or monitor for conflicting information.';
+    return [header, statementSection, contradictions, riskSection, nextSteps].join('\n\n');
 }
 
 function meaningfulStatement(value = '') {
@@ -56,9 +53,51 @@ export function roles() {
 }
 
 export async function action(statement) {
-    console.log('Challenging statement:', statement);
-    const mockStrategy = getStrategy('mock');
-    const response = await mockStrategy.processStatement('challenge-statement', {statement});
-    console.log('Challenge result:', response.result);
-    return {success: true, result: response.result};
+    const strategy = resolveStrategy(['default', 'simple-llm']);
+    const citations = await strategy.getChallengesForStatement(statement);
+
+    const llmAgent = tryGetLlmAgent();
+    const payload = {
+        statement,
+        citations: citations.map(item => ({
+            id: item.fact_id,
+            type: item.type,
+            source: item.source,
+            explanation: item.explanation,
+            content: item.content
+        }))
+    };
+
+    let report = fallbackReport(statement, citations);
+    if (llmAgent) {
+        try {
+            const description = [
+                'Create a Markdown challenge brief for the supplied statement.',
+                'Include sections: # Challenge Brief, ## Statement, ## Contradicting Evidence, ## Risk Assessment, ## Recommended Actions.',
+                'Summarise the severity based on available contradictions. If none exist, highlight the lack of evidence.',
+                'Use bullet lists for evidence and do not fabricate IDs or sources.'
+            ].join('\n');
+            const history = [{
+                role: 'user',
+                message: `Evaluate the following data:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``
+            }];
+            report = await llmAgent.doTask(
+                { skill: 'challenge-statement', intent: 'challenge', statement },
+                description,
+                { mode: 'precision', history }
+            );
+        } catch (error) {
+            console.warn('Falling back to static challenge report generator:', error.message);
+        }
+    }
+
+    console.log(report);
+    return {
+        success: true,
+        result: {
+            statement,
+            citations,
+            report
+        }
+    };
 }

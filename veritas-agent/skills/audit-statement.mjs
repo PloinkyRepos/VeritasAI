@@ -1,20 +1,28 @@
-import {getStrategy} from '../lib/strategy-registry.mjs';
+import { resolveStrategy, tryGetLlmAgent } from '../lib/skill-utils.mjs';
 
-function printSupport(entries, heading = 'Supporting facts') {
-    if (!entries.length) {
-        console.log(`No ${heading.toLowerCase()} were found.`);
-        return;
-    }
-    console.log(`${heading}:`);
-    for (const item of entries) {
-        console.log(`- [${item.fact_id}] ${item.content}`);
-        if (item.explanation) {
-            console.log(`  Reason: ${item.explanation}`);
-        }
-        if (item.source) {
-            console.log(`  Source: ${item.source}`);
-        }
-    }
+function fallbackReport(statement, supporting, challenging) {
+    const header = '# Statement Audit';
+    const statementSection = `## Statement\n${statement}`;
+    const supportingSection = supporting.length
+        ? `## Supporting Evidence\n${supporting.map(item => `- **${item.fact_id}**: ${item.content}${item.source ? ` _(source: ${item.source})_` : ''}${item.explanation ? `\n  - Rationale: ${item.explanation}` : ''}`).join('\n')}`
+        : '## Supporting Evidence\n- No supporting citations were located.';
+    const challengingSection = challenging.length
+        ? `## Contradicting Evidence\n${challenging.map(item => `- **${item.fact_id}**: ${item.content}${item.source ? ` _(source: ${item.source})_` : ''}${item.explanation ? `\n  - Rationale: ${item.explanation}` : ''}`).join('\n')}`
+        : '## Contradicting Evidence\n- No contradictions were found.';
+    const verdict = supporting.length && !challenging.length
+        ? 'supported'
+        : challenging.length && !supporting.length
+            ? 'contradicted'
+            : supporting.length || challenging.length
+                ? 'mixed'
+                : 'insufficient';
+    const verdictSection = `## Verdict\n${verdict}`;
+    const nextSteps = challenging.length
+        ? '## Next Steps\n- Investigate contradictions and align with stakeholders.'
+        : supporting.length
+            ? '## Next Steps\n- Maintain evidence and monitor for new contradictions.'
+            : '## Next Steps\n- Gather more evidence before proceeding.';
+    return [header, statementSection, supportingSection, challengingSection, verdictSection, nextSteps].join('\n\n');
 }
 
 function meaningfulStatement(value = '') {
@@ -56,9 +64,62 @@ export function roles() {
 }
 
 export async function action(statement) {
-    console.log('Auditing statement:', statement);
-    const mockStrategy = getStrategy('mock');
-    const response = await mockStrategy.processStatement('audit-statement', {statement});
-    console.log('Audit result:', response.result);
-    return {success: true, result: response.result};
+    const strategy = resolveStrategy(['default', 'simple-llm']);
+    const [supporting, challenging] = await Promise.all([
+        strategy.getEvidencesForStatement(statement),
+        strategy.getChallengesForStatement(statement)
+    ]);
+
+    const llmAgent = tryGetLlmAgent();
+    const payload = {
+        statement,
+        supporting: supporting.map(item => ({
+            id: item.fact_id,
+            type: item.type,
+            source: item.source,
+            explanation: item.explanation,
+            content: item.content
+        })),
+        challenging: challenging.map(item => ({
+            id: item.fact_id,
+            type: item.type,
+            source: item.source,
+            explanation: item.explanation,
+            content: item.content
+        }))
+    };
+
+    let report = fallbackReport(statement, supporting, challenging);
+    if (llmAgent) {
+        try {
+            const description = [
+                'Compile a Markdown audit report for the provided statement.',
+                'Structure sections: # Statement Audit, ## Statement, ## Supporting Evidence, ## Contradicting Evidence, ## Verdict, ## Next Steps.',
+                'Summarise the verdict as supported, contradicted, mixed, or insufficient.',
+                'Use bullet lists for evidence and do not fabricate data.'
+            ].join('\n');
+            const history = [{
+                role: 'user',
+                message: `Audit using this data:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``
+            }];
+            report = await llmAgent.doTask(
+                { skill: 'audit-statement', intent: 'audit', statement },
+                description,
+                { mode: 'precision', history }
+            );
+        } catch (error) {
+            console.warn('Falling back to static statement audit report:', error.message);
+        }
+    }
+
+    console.log(report);
+    return {
+        success: true,
+        result: {
+            statement,
+            supporting,
+            challenging,
+            report
+        }
+    };
 }
