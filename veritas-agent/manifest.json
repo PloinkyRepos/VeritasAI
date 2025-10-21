@@ -3,8 +3,7 @@
     "install": "/code/scripts/installPrerequisites.sh && /code/scripts/installPersisto.sh",
     "enable": [
         "postgres",
-        "keycloak",
-        "llamaindex"
+        "keycloak"
     ],
     "env": [
         "OPENAI_API_KEY",
