@@ -52,7 +52,13 @@ export function roles() {
 export async function action({file, rules, facts, source}) {
     console.log('Uploading rules and facts:', {file, rules, facts, source});
     const uploadStrategy = getStrategy('upload');
-    const response = await uploadStrategy.uploadRulesAndFacts({file, rules, facts, source});
+    const response = await uploadStrategy.uploadRulesAndFacts({
+        skillName: 'upload-rules',
+        file,
+        rules,
+        facts,
+        source
+    });
     console.log('Upload result:', response.result);
     return {success: true, result: response.result};
 }
