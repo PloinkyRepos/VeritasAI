@@ -1,4 +1,4 @@
-import { getSkillServices, ensurePersistoSchema } from '../lib/runtime.mjs';
+import { getStrategy } from '../lib/strategy-registry.mjs';
 
 function printSupport(entries, heading = 'Supporting facts') {
     if (!entries.length) {
@@ -57,8 +57,8 @@ function meaningfulStatement(value = '') {
 }
 export async function action({ statement } = {}) {
     console.log('Validating statement:', statement);
-    const { ragService, getStrategy } = getSkillServices();
     const mockStrategy = getStrategy('mock');
      const response  = await mockStrategy.processStatement('validate-statement', { statement });
+     console.log('Validation result:', response.result);
      return { success: true, result: response.result };
 }
