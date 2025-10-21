@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-REPO_URL="https://github.com/run-llama/llamaindex-ts.git"
+REPO_URL="https://github.com/run-llama/LlamaIndexTS.git"
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 TARGET_ROOT="${PROJECT_ROOT}/vendor"
 TARGET_DIR="${TARGET_ROOT}/llamaindex"
