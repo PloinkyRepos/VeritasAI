@@ -56,40 +56,8 @@ function meaningfulStatement(value = '') {
     return { valid: true, value: normalized };
 }
 export async function action({ statement } = {}) {
-    await ensurePersistoSchema();
-    const { ragService } = getSkillServices();
-    if (!ragService) {
-        throw new Error('RAG service is unavailable.');
-    }
-
-    const result = await ragService.analyzeStatement({
-        statement,
-        mode: 'validate',
-        log: true
-    });
-
-    console.log('# Statement validation');
-    console.log(`- Statement: "${result.statement}"`);
-    console.log(`- Verdict: ${result.verdict.toUpperCase()}`);
-    if (result.notes) {
-        console.log(`- Notes: ${result.notes}`);
-    }
-    if (result.analysisSource === 'llm') {
-        console.log('- Knowledge base unavailable; response generated via LLM-only reasoning.');
-    }
-
-    printSupport(result.supportingFacts, 'Supporting facts');
-    if (Array.isArray(result.contradictingFacts) && result.contradictingFacts.length) {
-        printSupport(result.contradictingFacts, 'Contradicting facts');
-    }
-
-    return {
-        success: result.verdict === 'supported',
-        statement: result.statement,
-        verdict: result.verdict,
-        supportingFacts: result.supportingFacts,
-        contradictingFacts: result.contradictingFacts,
-        notes: result.notes,
-        analysisSource: result.analysisSource
-    };
+    console.log('Validating statement:', statement);
+    const { ragService, getStrategy } = getSkillServices();
+    const mockStrategy = getStrategy('mock');
+    return mockStrategy.processStatement('validate-statement', { statement });
 }
