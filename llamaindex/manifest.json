@@ -3,7 +3,7 @@
     "install": "/code/install.sh",
     "env": {
         "OPENAI_API_KEY": null,
-        "NODE_PATH": "./vendor/llamaindex/node_modules:./vendor"
+        "NODE_PATH": "./vendor/node_modules"
     },
-    "agent": "node ./code/server.js"
+    "agent": "node /code/server.js"
 }
