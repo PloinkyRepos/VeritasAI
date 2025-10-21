@@ -1,5 +1,5 @@
 {
-    "container": "docker.io/timbru31/node-alpine-git:22",
+    "container": "docker.io/library/node:22.20-alpine",
     "install": "/code/install.sh",
     "env": {
         "OPENAI_API_KEY": null,
