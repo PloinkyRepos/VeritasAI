@@ -1,5 +1,13 @@
 import {getStrategy} from '../lib/strategy-registry.mjs';
 
+function meaningfulDocument(value = '') {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    if (normalized.length < 50) {
+        return {valid: false, reason: 'Document text is too short for a meaningful ranking.'};
+    }
+    return {valid: true, value: normalized};
+}
+
 export function specs() {
     return {
         name: 'rank-statements',
@@ -12,8 +20,10 @@ export function specs() {
             document: {
                 type: 'string',
                 description: 'Full text of the document or excerpt to compare against the knowledge base.',
+                llmHint: 'Provide the full document text for which you want to rank relevant statements.',
                 required: true,
-                multiline: true
+                multiline: true,
+                validator: meaningfulDocument
             },
             count: {
                 type: 'number',

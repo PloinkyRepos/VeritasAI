@@ -1,8 +1,32 @@
 import {getStrategy} from '../lib/strategy-registry.mjs';
 
-function mockValidation(statement) {
-    console.log('Validating statement:------->', statement);
-    return {valid: true, value: statement};
+function printSupport(entries, heading = 'Contradicting facts') {
+    if (!entries.length) {
+        console.log(`No ${heading.toLowerCase()} were found.`);
+        return;
+    }
+    console.log(`${heading}:`);
+    for (const item of entries) {
+        console.log(`- [${item.fact_id}] ${item.content}`);
+        if (item.explanation) {
+            console.log(`  Reason: ${item.explanation}`);
+        }
+        if (item.source) {
+            console.log(`  Source: ${item.source}`);
+        }
+    }
+}
+
+function meaningfulStatement(value = '') {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    if (normalized.length < 12) {
+        return {valid: false};
+    }
+    const looksLikeCommand = /^(validate|audit|challenge|check)\b/i.test(normalized);
+    if (looksLikeCommand) {
+        return {valid: false, reason: 'Input looks like a command, please provide a statement to challenge.'};
+    }
+    return {valid: true, value: normalized};
 }
 
 export function specs() {
@@ -17,9 +41,10 @@ export function specs() {
             statement: {
                 type: 'string',
                 description: 'The statement or claim to challenge.',
+                llmHint: 'Provide the exact claim you want to challenge, for example “All systems are currently secure”. Avoid command-like inputs.',
                 required: true,
                 multiline: true,
-                validator: mockValidation
+                validator: meaningfulStatement
             }
         },
         requiredArguments: ['statement']

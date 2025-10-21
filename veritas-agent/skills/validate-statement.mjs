@@ -17,6 +17,18 @@ function printSupport(entries, heading = 'Supporting facts') {
     }
 }
 
+function meaningfulStatement(value = '') {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    if (normalized.length < 12) {
+        return {valid: false, reason: 'Statement is too short for a meaningful validation.'};
+    }
+    const looksLikeCommand = /^(validate|audit|challenge|check)\b/i.test(normalized);
+    if (looksLikeCommand) {
+        return {valid: false, reason: 'Input looks like a command, please provide a statement to validate.'};
+    }
+    return {valid: true, value: normalized};
+}
+
 export function specs() {
     return {
         name: 'validate-statement',
@@ -33,7 +45,7 @@ export function specs() {
                 required: true,
                 multiline: true,
                 minLength: 12,
-                validator: mockValidation
+                validator: meaningfulStatement
             }
         },
         requiredArguments: ['statement']
@@ -44,30 +56,13 @@ export function roles() {
     return ['sysAdmin'];
 }
 
-function mockValidation(statement) {
-    console.log('Validating statement:------->', statement);
-    return {valid: true, value: statement};
-}
-
-function meaningfulStatement(value = '') {
-    const normalized = typeof value === 'string' ? value.trim() : '';
-    if (normalized.length < 12) {
-        return {valid: false};
-    }
-    const looksLikeCommand = /^(validate|audit|challenge|check)\b/i.test(normalized);
-    if (looksLikeCommand) {
-        console.log('Statement looks like a command:', normalized);
-        return {valid: false};
-    }
-
-    console.log('Statement is valid:', normalized);
-    return {valid: true, value: normalized};
-}
-
 export async function action(statement) {
     console.log('Validating statement:', statement);
     const mockStrategy = getStrategy('mock');
     const response = await mockStrategy.processStatement('validate-statement', {statement});
+    if (response.result && Array.isArray(response.result.supporting)) {
+        printSupport(response.result.supporting);
+    }
     console.log('Validation result:', response.result);
     return {success: true, result: response.result};
 }

@@ -1,8 +1,28 @@
 import {getStrategy} from '../lib/strategy-registry.mjs';
 
-function mockValidation(statement) {
-    console.log('Validating statement:------->', statement);
-    return {valid: true, value: statement};
+function printSupport(entries, heading = 'Supporting facts') {
+    if (!entries.length) {
+        console.log(`No ${heading.toLowerCase()} were found.`);
+        return;
+    }
+    console.log(`${heading}:`);
+    for (const item of entries) {
+        console.log(`- [${item.fact_id}] ${item.content}`);
+        if (item.explanation) {
+            console.log(`  Reason: ${item.explanation}`);
+        }
+        if (item.source) {
+            console.log(`  Source: ${item.source}`);
+        }
+    }
+}
+
+function meaningfulDocument(value = '') {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    if (normalized.length < 50) {
+        return {valid: false, reason: 'Document text is too short for a meaningful validation.'};
+    }
+    return {valid: true, value: normalized};
 }
 
 export function specs() {
@@ -17,9 +37,10 @@ export function specs() {
             document: {
                 type: 'string',
                 description: 'Document text to validate.',
+                llmHint: 'Provide the full document text you want to validate.',
                 required: true,
                 multiline: true,
-                validator: mockValidation
+                validator: meaningfulDocument
             },
             highlights: {
                 type: 'number',
