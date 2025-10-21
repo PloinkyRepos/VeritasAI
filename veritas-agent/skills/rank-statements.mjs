@@ -40,12 +40,8 @@ export function roles() {
 
 export async function action(document, count) {
     console.log('Ranking statements for document:', document, count);
-    const rankingStrategy = getStrategy('ranking');
-    const response = await rankingStrategy.rankStatements({
-        skillName: 'rank-statements',
-        document,
-        count
-    });
+    const mockStrategy = getStrategy('mock');
+    const response = await mockStrategy.processStatement('rank-statements', {document, count});
     console.log('Ranking result:', response.result);
     return {success: true, result: response.result};
 }

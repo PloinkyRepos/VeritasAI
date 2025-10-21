@@ -18,25 +18,9 @@ function normalizeStrategyArgs(defaultSkillName, skillNameOrOptions, maybeOption
 
 class MockStrategy {
     async processStatement(skillNameOrOptions, maybeOptions, _taskDescription) {
-        const { skillName } = normalizeStrategyArgs('mock-strategy', skillNameOrOptions, maybeOptions);
+        const { skillName, options } = normalizeStrategyArgs('mock-strategy', skillNameOrOptions, maybeOptions);
         // For now, just return the skill name for debugging purposes
-        return { result: `Mock strategy for ${skillName}` };
-    }
-}
-
-class RankingStrategy {
-    async rankStatements(skillNameOrOptions, maybeOptions, _taskDescription) {
-        const { skillName } = normalizeStrategyArgs('rank-statements', skillNameOrOptions, maybeOptions);
-        // For now, just return the skill name for debugging purposes
-        return { result: `Ranking strategy for ${skillName}` };
-    }
-}
-
-class UploadStrategy {
-    async uploadRulesAndFacts(skillNameOrOptions, maybeOptions, _taskDescription) {
-        const { skillName } = normalizeStrategyArgs('upload-rules', skillNameOrOptions, maybeOptions);
-        // For now, just return the skill name for debugging purposes
-        return { result: `Upload strategy for ${skillName}` };
+        return { result: `Mock strategy for ${skillName}`, details: options };
     }
 }
 
@@ -53,8 +37,6 @@ function getStrategy(name) {
 
 function initializeStrategies() {
     registerStrategy('mock', new MockStrategy());
-    registerStrategy('ranking', new RankingStrategy());
-    registerStrategy('upload', new UploadStrategy());
     // Future strategies can be registered here
 }
 
