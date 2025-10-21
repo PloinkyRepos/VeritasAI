@@ -2,7 +2,8 @@
 set -eu
 
 REPO_URL="https://github.com/run-llama/llamaindex-ts.git"
-TARGET_ROOT="/code/vendor"
+PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
+TARGET_ROOT="${PROJECT_ROOT}/vendor"
 TARGET_DIR="${TARGET_ROOT}/llamaindex"
 BRANCH="main"
 
@@ -27,7 +28,7 @@ fi
 
 # Instalează dependențele local, sub vendor/, ca să nu atingem /node_modules read-only.
 echo "Rulez npm install în ${TARGET_DIR}."
-npm install --omit=dev --prefix "${TARGET_DIR}" >/dev/null
+( cd "${TARGET_DIR}" && npm install --omit=dev >/dev/null )
 
 echo "Repo ${REPO_URL} pregătit în ${TARGET_DIR}."
-echo "Setează NODE_PATH=${TARGET_DIR}/node_modules:${TARGET_ROOT}/node_modules pentru runtime." >&2
+echo "Setează NODE_PATH=./vendor/llamaindex/node_modules:./vendor pentru runtime." >&2
