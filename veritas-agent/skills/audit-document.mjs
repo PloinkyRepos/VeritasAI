@@ -1,6 +1,4 @@
 import { getSkillServices, ensurePersistoSchema } from '../lib/runtime.mjs';
-import { analyzeDocument } from '../lib/rag-analysis.mjs';
-import { toSafeString } from '../lib/rag-helpers.mjs';
 
 function normalizeHighlightCount(value) {
     const numeric = Number(value);
@@ -60,21 +58,14 @@ export function roles() {
 }
 
 export async function action({ document, highlights } = {}) {
-    const trimmedDocument = toSafeString(document);
-    if (!trimmedDocument) {
-        throw new Error('Provide a document to audit.');
-    }
-
-    const { client, llmAgent } = getSkillServices();
+    const { ragService } = getSkillServices();
     await ensurePersistoSchema();
 
     const maxHighlights = normalizeHighlightCount(highlights);
 
-    const result = await analyzeDocument({
-        document: trimmedDocument,
+    const result = await ragService.analyzeDocument({
+        document,
         mode: 'audit',
-        client,
-        llmAgent,
         maxHighlights,
         log: true
     });

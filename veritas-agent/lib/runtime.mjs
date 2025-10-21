@@ -1,4 +1,5 @@
 import { loadSchema } from './skills-helpers.mjs';
+import RAGService from './rag-service.mjs';
 
 const DEFAULT_SERVER_HOST = process.env.PERSISTO_HOST || 'localhost';
 const DEFAULT_SERVER_PORT = process.env.PERSISTO_PORT || '3000';
@@ -57,10 +58,15 @@ export function getSkillServices() {
         return globalThis.__veritasSkillServices;
     }
     if (!cachedServices) {
+        const client = getPersistoClient();
+        // This is a placeholder for the real llmAgent. 
+        // The actual llmAgent is injected by the ploinkyAgentLib.
+        const llmAgent = { complete: () => Promise.resolve('') }; 
         cachedServices = {
-            client: getPersistoClient(),
+            client,
             logger: createLogger(),
             audit: createAudit(),
+            ragService: new RAGService({ client, llmAgent }),
             user: null,
             task: ''
         };

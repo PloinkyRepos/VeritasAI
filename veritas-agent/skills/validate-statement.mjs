@@ -1,6 +1,4 @@
 import { getSkillServices, ensurePersistoSchema } from '../lib/runtime.mjs';
-import { analyzeStatement } from '../lib/rag-analysis.mjs';
-import { toSafeString } from '../lib/rag-helpers.mjs';
 
 function printSupport(entries) {
     if (!entries.length) {
@@ -44,19 +42,12 @@ export function roles() {
 }
 
 export async function action({ statement } = {}) {
-    const trimmedStatement = toSafeString(statement);
-    if (!trimmedStatement) {
-        throw new Error('Provide a statement to validate.');
-    }
-
-    const { client, llmAgent } = getSkillServices();
+    const { ragService } = getSkillServices();
     await ensurePersistoSchema();
 
-    const result = await analyzeStatement({
-        statement: trimmedStatement,
+    const result = await ragService.analyzeStatement({
+        statement,
         mode: 'validate',
-        client,
-        llmAgent,
         log: true
     });
 

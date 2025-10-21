@@ -1,6 +1,4 @@
 import { getSkillServices, ensurePersistoSchema } from '../lib/runtime.mjs';
-import { analyzeDocument } from '../lib/rag-analysis.mjs';
-import { toSafeString } from '../lib/rag-helpers.mjs';
 
 function normalizeLimit(value) {
     const numeric = Number(value);
@@ -60,21 +58,14 @@ export function roles() {
 }
 
 export async function action({ document, highlights } = {}) {
-    const trimmedDocument = toSafeString(document);
-    if (!trimmedDocument) {
-        throw new Error('Provide a document to challenge.');
-    }
-
-    const { client, llmAgent } = getSkillServices();
+    const { ragService } = getSkillServices();
     await ensurePersistoSchema();
 
     const limit = normalizeLimit(highlights);
 
-    const result = await analyzeDocument({
-        document: trimmedDocument,
+    const result = await ragService.analyzeDocument({
+        document,
         mode: 'challenge',
-        client,
-        llmAgent,
         maxHighlights: limit,
         log: true
     });
