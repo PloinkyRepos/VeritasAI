@@ -51,8 +51,11 @@ function meaningfulStatement(value = '') {
     }
     const looksLikeCommand = /^(validate|audit|challenge|check)\b/i.test(normalized);
     if (looksLikeCommand) {
+        console.log('Statement looks like a command:', normalized);
         return { valid: false };
     }
+
+    console.log('Statement is valid:', normalized);
     return { valid: true, value: normalized };
 }
 export async function action({ statement } = {}) {
