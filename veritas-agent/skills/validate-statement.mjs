@@ -44,6 +44,7 @@ export function roles() {
     return ['sysAdmin'];
 }
 function mockValidation(statement) {
+    console.log('Validating statement:------->', statement);
     return { valid: true, value: statement };
 }
 function meaningfulStatement(value = '') {
