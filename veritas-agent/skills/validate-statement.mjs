@@ -1,4 +1,4 @@
-import { getStrategy } from '../lib/strategy-registry.mjs';
+import {getStrategy} from '../lib/strategy-registry.mjs';
 
 function printSupport(entries, heading = 'Supporting facts') {
     if (!entries.length) {
@@ -43,28 +43,31 @@ export function specs() {
 export function roles() {
     return ['sysAdmin'];
 }
+
 function mockValidation(statement) {
     console.log('Validating statement:------->', statement);
-    return { valid: true, value: statement };
+    return {valid: true, value: statement};
 }
+
 function meaningfulStatement(value = '') {
     const normalized = typeof value === 'string' ? value.trim() : '';
     if (normalized.length < 12) {
-        return { valid: false };
+        return {valid: false};
     }
     const looksLikeCommand = /^(validate|audit|challenge|check)\b/i.test(normalized);
     if (looksLikeCommand) {
         console.log('Statement looks like a command:', normalized);
-        return { valid: false };
+        return {valid: false};
     }
 
     console.log('Statement is valid:', normalized);
-    return { valid: true, value: normalized };
+    return {valid: true, value: normalized};
 }
-export async function action({ statement } = {}) {
+
+export async function action(statement) {
     console.log('Validating statement:', statement);
     const mockStrategy = getStrategy('mock');
-     const response  = await mockStrategy.processStatement('validate-statement', { statement });
-     console.log('Validation result:', response.result);
-     return { success: true, result: response.result };
+    const response = await mockStrategy.processStatement('validate-statement', {statement});
+    console.log('Validation result:', response.result);
+    return {success: true, result: response.result};
 }
