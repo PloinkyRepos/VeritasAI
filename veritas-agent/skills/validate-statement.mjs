@@ -42,40 +42,7 @@ export function roles() {
 }
 
 export async function action({ statement } = {}) {
-    const { ragService } = getSkillServices();
-    await ensurePersistoSchema();
-
-    const result = await ragService.analyzeStatement({
-        statement,
-        mode: 'validate',
-        log: true
-    });
-
-    console.log(`# Validate statement`);
-    console.log(`- Statement: "${result.statement}"`);
-    console.log(`- Verdict: ${result.verdict.toUpperCase()}`);
-    if (result.notes) {
-        console.log(`- Notes: ${result.notes}`);
-    }
-    if (result.analysisSource === 'llm') {
-        console.log('- Knowledge base unavailable; response generated via LLM-only reasoning.');
-    }
-
-    printSupport(result.supportingFacts);
-
-    if (result.contradictingFacts.length) {
-        console.log('\nContradicting facts were also identified:');
-        for (const item of result.contradictingFacts) {
-            console.log(`- [${item.fact_id}] ${item.content}`);
-        }
-    }
-
-    return {
-        success: true,
-        verdict: result.verdict,
-        supportingFacts: result.supportingFacts,
-        contradictingFacts: result.contradictingFacts,
-        notes: result.notes,
-        analysisSource: result.analysisSource
-    };
+    const { ragService, getStrategy } = getSkillServices();
+    const mockStrategy = getStrategy('mock');
+    return mockStrategy.processStatement('validate-statement', { statement });
 }

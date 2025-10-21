@@ -26,6 +26,7 @@ import {
     formatRoleList
 } from './lib/help-helpers.mjs';
 import { createPromptReader } from './lib/prompt-reader.mjs';
+import { initializeStrategies, getStrategy } from './lib/strategy-registry.mjs';
 // import { extractArgumentsWithEnhancedPrompt } from './lib/improved-extraction-prompt.mjs'; // TODO: Needs proper integration
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,7 +57,8 @@ const agent = new SkilledAgent({
 });
 const baseServices = {
     ...getSkillServices(),
-    llmAgent
+    llmAgent,
+    getStrategy
 };
 
 try {
@@ -720,6 +722,7 @@ async function main() {
         console.warn('Warning: Failed to initialize logging system:', error.message);
     }
 
+    initializeStrategies();
     // TODO: Enhanced extraction prompt integration
     // The improved-extraction-prompt.mjs is ready but needs proper integration
     // into ploinkyAgentLib's executor. For now, relying on the built-in extraction
