@@ -27,7 +27,7 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Detect workspace directory (prefer explicit hint, then search upwards)
-INITIAL_WORKSPACE_DIR="${PLOINKY_WORKSPACE_DIR:-$(pwd)}"
+INITIAL_WORKSPACE_DIR="$(pwd)"
 
 find_workspace_root() {
     local current="$1"

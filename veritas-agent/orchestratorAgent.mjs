@@ -9,7 +9,6 @@ import {
     getSkillServices,
     setSkillServices
 } from './lib/runtime.mjs';
-import { initLlamaIndex } from './lib/llamaindex-context.mjs';
 import { resolveArgumentOptions } from './lib/argument-options.mjs';
 import {
     getSkillDiscoveryLogger,
@@ -32,6 +31,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SKILLS_DIRECTORY = path.resolve(__dirname, 'skills');
 const SESSION_KEY = 'orchestratorAgent.session';
+const WORKSPACE_DIR = process.cwd();
 
 // Create LLMAgent instance
 const llmAgent = new LLMAgent({
@@ -57,16 +57,9 @@ const agent = new SkilledAgent({
 const baseServices = {
     ...getSkillServices(),
     llmAgent,
-    getStrategy
+    getStrategy,
+    workspaceDir: WORKSPACE_DIR
 };
-
-try {
-    const llamaIndexContext = await initLlamaIndex();
-    baseServices.llamaIndex = llamaIndexContext;
-    console.log('[LlamaIndex] Initialized', llamaIndexContext.models);
-} catch (error) {
-    console.warn('[LlamaIndex] Initialization skipped:', error.message);
-}
 
 setSkillServices(baseServices);
 const roleDirectory = new Map();

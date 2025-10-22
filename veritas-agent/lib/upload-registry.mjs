@@ -23,9 +23,6 @@ function getWorkspaceDir(preferred) {
     if (preferred && typeof preferred === 'string' && preferred.trim()) {
         return preferred.trim();
     }
-    if (process.env.PLOINKY_WORKSPACE_DIR && process.env.PLOINKY_WORKSPACE_DIR.trim()) {
-        return process.env.PLOINKY_WORKSPACE_DIR.trim();
-    }
     return process.cwd();
 }
 

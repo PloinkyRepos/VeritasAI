@@ -11,7 +11,7 @@ function requireInput(value) {
         return { valid: true };
     }
     const services = getSkillServices();
-    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
     }
@@ -95,7 +95,7 @@ export async function action({input}) {
     const actions = [];
 
     const services = getSkillServices();
-    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
     }

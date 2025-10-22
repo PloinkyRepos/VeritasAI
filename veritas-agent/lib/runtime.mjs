@@ -21,6 +21,7 @@ function createAudit() {
 }
 
 function createDefaultServices(overrides = {}) {
+    const workspaceDir = process.cwd();
     const base = {
         client: null,
         logger: createLogger(),
@@ -28,7 +29,8 @@ function createDefaultServices(overrides = {}) {
         ragService: null,
         llmAgent: null,
         user: null,
-        task: ''
+        task: '',
+        workspaceDir
     };
     return { ...base, ...overrides };
 }

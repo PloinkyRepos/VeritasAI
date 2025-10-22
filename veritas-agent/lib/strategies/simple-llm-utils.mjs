@@ -30,7 +30,7 @@ async function readResourceFile(resourceURL, logger) {
     }
 
     const services = getSkillServices();
-    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
     }

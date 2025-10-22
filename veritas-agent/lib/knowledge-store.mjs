@@ -1,12 +1,13 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WORKSPACE_ROOT = (() => {
-    const hint = process.env.PLOINKY_WORKSPACE_DIR;
+    const hint = process.cwd();
     if (typeof hint === 'string' && hint.trim()) {
         return path.resolve(hint.trim());
     }
