@@ -8,7 +8,7 @@ import {
 function requireInput(value) {
     const trimmed = typeof value === 'string' ? value.trim() : '';
     if (trimmed) {
-        return {valid: true};
+        return { valid: true };
     }
     const services = getSkillServices();
     const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
@@ -16,9 +16,9 @@ function requireInput(value) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
     }
     if (getRegisteredUploads().length) {
-        return {valid: true};
+        return { valid: true };
     }
-    return {valid: false, reason: 'Please provide rules or facts to upload, either directly or in a file.'};
+    return { valid: false, reason: 'Please provide rules or facts to upload, either directly or in a file.' };
 }
 
 function fallbackReport(actions) {
@@ -123,7 +123,7 @@ export async function action({input}) {
     if (resourceURL) {
         const stored = await strategy.storeRelevantAspectsFromSingleFile(
             resourceURL,
-            text || '',
+            '',
             { defaultSource: resourceURL }
         );
         if (stored.length) {

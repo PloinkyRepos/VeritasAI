@@ -5,9 +5,19 @@ import { randomUUID, createHash } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const WORKSPACE_ROOT = (() => {
+    const hint = process.env.PLOINKY_WORKSPACE_DIR;
+    if (typeof hint === 'string' && hint.trim()) {
+        return path.resolve(hint.trim());
+    }
+    return null;
+})();
+
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DATA_DIR = path.resolve(ROOT_DIR, 'data');
-const DEFAULT_STORAGE_PATH = path.resolve(DATA_DIR, 'veritas-knowledge.json');
+const DEFAULT_STORAGE_PATH = WORKSPACE_ROOT
+    ? path.resolve(WORKSPACE_ROOT, '.veritas', 'veritas-knowledge.json')
+    : path.resolve(DATA_DIR, 'veritas-knowledge.json');
 
 async function readJson(filePath) {
     try {
