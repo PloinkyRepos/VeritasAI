@@ -1,6 +1,6 @@
 {
     "container": "docker.io/library/node:22.20-alpine",
-    "install": "/code/scripts/installPrerequisites.sh && /code/scripts/installPersisto.sh",
+    "install": "/code/scripts/installPrerequisites.sh",
     "enable": [
         "postgres",
         "keycloak"
@@ -14,12 +14,8 @@
         "OPENROUTER_API_KEY",
         "HUGGINGFACE_API_KEY",
         "LLMAgentClient_DEBUG",
-        "LLMAgentClient_VERBOSE_DELAY",
-        "PERSISTO_URL",
-        "PERSISTO_HOST",
-        "PERSISTO_PORT"
+        "LLMAgentClient_VERBOSE_DELAY"
     ],
     "cli": "/code/scripts/startFlow.sh",
-    "agent": "node ./Persisto/src/persistoServer.cjs",
     "ploinky": "sso enable"
 }

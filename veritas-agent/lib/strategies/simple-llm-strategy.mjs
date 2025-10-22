@@ -23,22 +23,27 @@ class SimpleLLmStrategy {
         });
     }
 
-    async storeRelevantAspectsFromSingleFile(resourceURL, statement = '') {
+    async storeRelevantAspectsFromSingleFile(resourceURL, statement = '', options = {}) {
+        const { defaultSource = resourceURL || null, defaultType = 'fact' } = options;
         const text = await readResourceFile(resourceURL, this.logger);
         const aspects = await extractAspectsWithLLM(this, {
             resourceURL,
             statement,
             text,
-            defaultType: 'fact'
+            defaultType
         });
         if (!aspects.length) {
             return [];
         }
-        await this.knowledgeStore.mergeResource(resourceURL, aspects, {
+        const enriched = aspects.map(aspect => ({
+            ...aspect,
+            source: aspect.source || defaultSource
+        }));
+        await this.knowledgeStore.mergeResource(resourceURL, enriched, {
             statement,
-            defaultType: 'fact'
+            defaultType
         });
-        return aspects;
+        return enriched;
     }
 
     async detectRulesFromStatement(statement) {
@@ -48,6 +53,37 @@ class SimpleLLmStrategy {
             text: statement,
             defaultType: 'rule'
         });
+    }
+
+    async storeRelevantAspectsFromStatement(statement, options = {}) {
+        const {
+            resourceKey = null,
+            defaultType = 'fact',
+            defaultSource = null
+        } = options || {};
+
+        const aspects = await extractAspectsWithLLM(this, {
+            resourceURL: null,
+            statement,
+            text: statement,
+            defaultType
+        });
+
+        if (!aspects.length) {
+            return [];
+        }
+
+        const enriched = aspects.map(aspect => ({
+            ...aspect,
+            source: aspect.source || defaultSource || null
+        }));
+
+        await this.knowledgeStore.mergeResource(resourceKey, enriched, {
+            statement,
+            defaultType
+        });
+
+        return enriched;
     }
 
     async getEvidencesForStatement(statement) {

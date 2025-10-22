@@ -1,12 +1,13 @@
-import { resolveStrategy, tryGetLlmAgent } from '../lib/skill-utils.mjs';
+import { resolveStrategy, tryGetLlmAgent, resolveResourceInput } from '../lib/skill-utils.mjs';
 import { getSkillServices } from '../lib/runtime.mjs';
 import {
     ensureUploadsRegisteredFromTask,
     getRegisteredUploads
 } from '../lib/upload-registry.mjs';
 
-function requireRulesOrFacts(value, {file, rules, facts}) {
-    if (file || rules || facts) {
+function requireInput(value) {
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+    if (trimmed) {
         return {valid: true};
     }
     const services = getSkillServices();
@@ -62,37 +63,21 @@ function fallbackReport(actions) {
 export function specs() {
     return {
         name: 'upload-rules',
-        needConfirmation: true,
-        description: 'Upload, import, or add rules and facts to the VeritasAI knowledge base. Supports JSON or newline text inputs.',
+        needConfirmation: false,
+        description: 'Upload, import, or add rules and facts to the VeritasAI knowledge base. Provide either a file path/URL or inline text.',
         why: 'Keeps the retrieval-augmented knowledge base updated with the latest rules and supporting evidence.',
         what: 'Reads structured data and inserts or updates rule and fact records in the RAG datastore.',
         humanDescription: 'Upload new rules and supporting facts.',
         arguments: {
-            file: {
+            input: {
                 type: 'string',
-                description: 'Optional file in the temp directory containing rules/facts (JSON or text).',
-                llmHint: 'You can specify a file from the temp directory to upload.'
-            },
-            rules: {
-                type: 'string',
-                description: 'Rules to add (JSON array or newline text).',
-                llmHint: 'You can provide the rules directly as a JSON array or as newline-separated text.',
+                description: 'Either a file path/URL pointing to rules and facts or inline text that contains them.',
+                llmHint: 'Provide a local path, an uploaded filename, or paste the rules/facts directly.',
                 multiline: true,
-                validator: requireRulesOrFacts
-            },
-            facts: {
-                type: 'string',
-                description: 'Facts or evidence entries (JSON array or newline text).',
-                llmHint: 'You can provide the facts directly as a JSON array or as newline-separated text.',
-                multiline: true
-            },
-            source: {
-                type: 'string',
-                description: 'Default source or reference applied when entries omit a source.',
-                llmHint: 'Optionally, you can specify a default source for the rules and facts.'
+                validator: requireInput
             }
         },
-        requiredArguments: []
+        requiredArguments: ['input']
     };
 }
 
@@ -100,8 +85,8 @@ export function roles() {
     return ['sysAdmin'];
 }
 
-export async function action({file, rules, facts, source}) {
-    const strategy = resolveStrategy(['default', 'simple-llm']);
+export async function action({input}) {
+    const strategy = resolveStrategy(['simple-llm', 'default']);
     const knowledgeStore = strategy.knowledgeStore;
     if (!knowledgeStore) {
         throw new Error('Knowledge store is unavailable. Cannot persist rules or facts.');
@@ -109,70 +94,66 @@ export async function action({file, rules, facts, source}) {
 
     const actions = [];
 
-    let selectedFile = typeof file === 'string' ? file.trim() : '';
-    let selectedFileLabel = selectedFile;
-
-    if (!selectedFile) {
-        const services = getSkillServices();
-        const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
-        if (services?.task) {
-            ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
-        }
-        const uploads = getRegisteredUploads();
-        if (uploads.length) {
-            const latestUpload = uploads[uploads.length - 1];
-            selectedFile = latestUpload.path || latestUpload.url || latestUpload.id;
-            selectedFileLabel = latestUpload.name || latestUpload.url || latestUpload.id || selectedFile;
-        }
+    const services = getSkillServices();
+    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    if (services?.task) {
+        ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
     }
 
-    if (selectedFile) {
-        const detected = await strategy.detectRelevantAspectsFromSingleFile(selectedFile, source || '');
-        const enriched = detected.map(aspect => ({
-            ...aspect,
-            source: aspect.source || source || selectedFile
-        }));
-        if (enriched.length) {
-            await knowledgeStore.replaceResource(selectedFile, enriched, { statement: source || '', defaultType: 'fact' });
+    const uploads = getRegisteredUploads();
+    let candidateInput = typeof input === 'string' ? input.trim() : '';
+    let candidateLabel = candidateInput;
+
+    if (!candidateInput && uploads.length) {
+        const latestUpload = uploads[uploads.length - 1];
+        candidateInput = latestUpload.path || latestUpload.url || latestUpload.id || '';
+        candidateLabel = latestUpload.name || latestUpload.url || latestUpload.id || candidateInput;
+    }
+
+    if (!candidateInput) {
+        throw new Error('Provide a file path/URL or inline text containing rules or facts.');
+    }
+
+    if (!candidateLabel) {
+        candidateLabel = candidateInput;
+    }
+
+    const { resourceURL, text } = await resolveResourceInput(candidateInput);
+
+    if (resourceURL) {
+        const stored = await strategy.storeRelevantAspectsFromSingleFile(
+            resourceURL,
+            text || '',
+            { defaultSource: resourceURL }
+        );
+        if (stored.length) {
             actions.push({
-                label: selectedFileLabel || selectedFile,
+                label: candidateLabel || resourceURL,
                 type: 'file',
-                aspects: enriched
+                aspects: stored
             });
         }
-    }
-
-    if (rules) {
-        const context = source ? `Rules from ${source}:\n${rules}` : rules;
-        const detectedRules = await strategy.detectRulesFromStatement(context);
-        const normalizedRules = detectedRules.map(aspect => ({
-            ...aspect,
-            source: aspect.source || source || null
-        }));
-        if (normalizedRules.length) {
-            const resourceKey = source ? `${source}#rules` : `inline:rules#${Date.now()}`;
-            await knowledgeStore.mergeResource(resourceKey, normalizedRules, { statement: context, defaultType: 'rule' });
-            actions.push({ label: resourceKey, type: 'rules', aspects: normalizedRules });
+    } else if (text) {
+        const resourceKey = `inline:${Date.now()}`;
+        const label = candidateLabel || (text.length > 60 ? `${text.slice(0, 57)}…` : text);
+        const stored = await strategy.storeRelevantAspectsFromStatement(text, {
+            resourceKey,
+            defaultType: 'fact',
+            defaultSource: label
+        });
+        if (stored.length) {
+            actions.push({
+                label,
+                type: 'statement',
+                aspects: stored
+            });
         }
-    }
-
-    if (facts) {
-        const context = source ? `Facts from ${source}:\n${facts}` : facts;
-        const detectedFacts = await strategy.detectRelevantAspectsFromSingleFile(null, context);
-        const normalizedFacts = detectedFacts.map(aspect => ({
-            ...aspect,
-            source: aspect.source || source || null
-        }));
-        if (normalizedFacts.length) {
-            const resourceKey = source ? `${source}#facts` : `inline:facts#${Date.now()}`;
-            await knowledgeStore.mergeResource(resourceKey, normalizedFacts, { statement: context, defaultType: 'fact' });
-            actions.push({ label: resourceKey, type: 'facts', aspects: normalizedFacts });
-        }
+    } else {
+        throw new Error('Unable to read content from the provided input.');
     }
 
     const llmAgent = tryGetLlmAgent();
     const payload = {
-        source,
         actions: actions.map(entry => ({
             label: entry.label,
             type: entry.type,
@@ -180,7 +161,7 @@ export async function action({file, rules, facts, source}) {
                 id: aspect.id,
                 type: aspect.type,
                 content: aspect.content,
-                source: aspect.source || source || null
+                source: aspect.source || null
             }))
         }))
     };
@@ -200,7 +181,7 @@ export async function action({file, rules, facts, source}) {
                 message: `Upload payload:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``
             }];
             report = await llmAgent.doTask(
-                { skill: 'upload-rules', intent: 'ingest-knowledge', source },
+                { skill: 'upload-rules', intent: 'ingest-knowledge' },
                 description,
                 { mode: 'precision', history }
             );

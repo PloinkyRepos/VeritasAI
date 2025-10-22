@@ -7,8 +7,7 @@ import { readdir } from 'node:fs/promises';
 import { SkilledAgent, LLMAgent } from 'ploinkyAgentLib';
 import {
     getSkillServices,
-    setSkillServices,
-    ensurePersistoSchema as ensurePersistoSchemaRuntime
+    setSkillServices
 } from './lib/runtime.mjs';
 import { initLlamaIndex } from './lib/llamaindex-context.mjs';
 import { resolveArgumentOptions } from './lib/argument-options.mjs';
@@ -729,16 +728,6 @@ async function main() {
     // with better enumerator support.
 
     await registerSkills(agent);
-/*    try {
-        await ensurePersistoSchemaRuntime();
-    } catch (error) {
-        if (process.env.LLMAgentClient_DEBUG === 'true') {
-            console.warn(`Failed to verify Persisto schema: ${error.message}`);
-        } else {
-            console.log('Skipping schema verification because the data service is unavailable.');
-        }
-    }*/
-
     // Try CLI arguments first (for webchat sessions with SSO)
     let user = null;
     const cliAuth = parseCliArguments();
