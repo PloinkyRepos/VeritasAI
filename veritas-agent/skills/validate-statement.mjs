@@ -1,4 +1,4 @@
-import { resolveStrategy, tryGetLlmAgent } from '../lib/skill-utils.mjs';
+import {resolveStrategy, tryGetLlmAgent} from '../lib/skill-utils.mjs';
 
 function fallbackReport(statement, citations) {
     const header = '# Validation Brief';
@@ -71,6 +71,7 @@ export async function action(statement) {
 
     let report = fallbackReport(statement, citations);
     if (llmAgent) {
+        console.log('------Using LLM agent to generate report...');
         try {
             const description = [
                 'Produce a concise Markdown validation brief for the provided statement and supporting citations.',
@@ -84,16 +85,18 @@ export async function action(statement) {
                 message: `Provide the report for this JSON payload:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``
             }];
             report = await llmAgent.doTask(
-                { skill: 'validate-statement', intent: 'validate', statement },
+                {skill: 'validate-statement', intent: 'validate', statement},
                 description,
-                { mode: 'precision', history }
+                {mode: 'precision', history}
             );
         } catch (error) {
+            console.log('------Using LLM agent to generate report error:', error.message);
             console.warn('Falling back to static report generator:', error.message);
         }
     }
 
     console.log(report);
+    console.log('------Report generated', statement, citations, report);
     return {
         success: true,
         result: {
