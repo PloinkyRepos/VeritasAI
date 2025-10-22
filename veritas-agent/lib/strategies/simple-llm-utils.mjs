@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { getSkillServices } from '../runtime.mjs';
+import { getServices } from '../service-context.mjs';
 import {
     ensureUploadsRegisteredFromTask,
     resolveUploadedFile
@@ -29,7 +29,7 @@ async function readResourceFile(resourceURL, logger) {
         return null;
     }
 
-    const services = getSkillServices();
+    const services = getServices();
     const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
@@ -359,7 +359,12 @@ function resolveAgent(strategy) {
     if (strategy.llmAgent) {
         return strategy.llmAgent;
     }
-    const services = getSkillServices();
+    const agent = globalThis.__veritasAgent;
+    if (agent?.llmAgent) {
+        strategy.llmAgent = agent.llmAgent;
+        return strategy.llmAgent;
+    }
+    const services = getServices();
     if (services?.llmAgent) {
         strategy.llmAgent = services.llmAgent;
         return strategy.llmAgent;

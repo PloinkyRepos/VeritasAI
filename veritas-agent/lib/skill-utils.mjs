@@ -1,7 +1,7 @@
 import { stat, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { getSkillServices } from './runtime.mjs';
+import { getServices } from './service-context.mjs';
 import { getStrategy } from './strategy-registry.mjs';
 import {
     ensureUploadsRegisteredFromTask,
@@ -28,17 +28,19 @@ export function resolveStrategy(preferredNames = []) {
 }
 
 export function getLlmAgentOrThrow() {
-    const services = getSkillServices();
-    if (!services?.llmAgent || typeof services.llmAgent.doTask !== 'function') {
+    const agent = globalThis.__veritasAgent;
+    const llmAgent = agent?.llmAgent || getServices().llmAgent;
+    if (!llmAgent || typeof llmAgent.doTask !== 'function') {
         throw new Error('LLM agent is unavailable. Configure an LLM invoker to run this skill.');
     }
-    return services.llmAgent;
+    return llmAgent;
 }
 
 export function tryGetLlmAgent() {
-    const services = getSkillServices();
-    if (services?.llmAgent && typeof services.llmAgent.doTask === 'function') {
-        return services.llmAgent;
+    const agent = globalThis.__veritasAgent;
+    const llmAgent = agent?.llmAgent || getServices().llmAgent;
+    if (llmAgent && typeof llmAgent.doTask === 'function') {
+        return llmAgent;
     }
     return null;
 }
@@ -52,7 +54,7 @@ export async function resolveResourceInput(value) {
         return { resourceURL: null, text: '' };
     }
 
-    const services = getSkillServices();
+    const services = getServices();
     const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });

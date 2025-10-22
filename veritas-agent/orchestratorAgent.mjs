@@ -5,10 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readdir } from 'node:fs/promises';
 
 import { SkilledAgent, LLMAgent } from 'ploinkyAgentLib';
-import {
-    getSkillServices,
-    setSkillServices
-} from './lib/runtime.mjs';
+import { updateServices } from './lib/service-context.mjs';
 import { resolveArgumentOptions } from './lib/argument-options.mjs';
 import {
     getSkillDiscoveryLogger,
@@ -54,14 +51,11 @@ const agent = new SkilledAgent({
         // No action needed here to avoid interfering with the output stream.
     }
 });
-const baseServices = {
-    ...getSkillServices(),
+updateServices({
     llmAgent,
     getStrategy,
     workspaceDir: WORKSPACE_DIR
-};
-
-setSkillServices(baseServices);
+});
 const roleDirectory = new Map();
 
 // Make agent available globally for help skill
@@ -342,8 +336,7 @@ async function registerSkills(agentInstance) {
 }
 
 function updateSkillContext(user, task) {
-    setSkillServices({
-        ...baseServices,
+    updateServices({
         user: user ? { ...user } : null,
         task: typeof task === 'string' ? task : ''
     });

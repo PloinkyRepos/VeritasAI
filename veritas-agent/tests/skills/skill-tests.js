@@ -1,5 +1,5 @@
 import { registerStrategy } from '../../lib/strategy-registry.mjs';
-import { getSkillServices, setSkillServices } from '../../lib/runtime.mjs';
+import { getServices, setServices } from '../../lib/service-context.mjs';
 import { action as validateStatementAction } from '../../skills/validate-statement.mjs';
 import { action as challengeStatementAction } from '../../skills/challenge-statement.mjs';
 import { action as auditStatementAction } from '../../skills/audit-statement.mjs';
@@ -29,8 +29,8 @@ async function setupSkillTest({ seed = true } = {}) {
     registerStrategy('simple-llm', strategy);
     registerStrategy('default', strategy);
 
-    const existingServices = getSkillServices();
-    setSkillServices({
+    const existingServices = getServices();
+    setServices({
         ...existingServices,
         llmAgent,
         task: '',

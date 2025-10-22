@@ -1,5 +1,5 @@
 import { printAvailableActions } from '../lib/help-helpers.mjs';
-import { getSkillServices } from '../lib/runtime.mjs';
+import { getServices } from '../lib/service-context.mjs';
 
 export function specs() {
     return {
@@ -24,7 +24,7 @@ export function roles() {
 }
 
 export async function action({ query } = {}) {
-    const services = getSkillServices();
+    const services = getServices();
     const user = services.user;
 
     if (!user || !Array.isArray(user.roles) || !user.roles.length) {

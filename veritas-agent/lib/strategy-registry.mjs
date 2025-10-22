@@ -1,6 +1,6 @@
 import { KnowledgeStore } from './knowledge-store.mjs';
 import { SimpleLLmStrategy } from './strategies/simple-llm-strategy.mjs';
-import { getSkillServices } from './runtime.mjs';
+import { getServices } from './service-context.mjs';
 
 const strategies = new Map();
 let defaultKnowledgeStore = null;
@@ -48,7 +48,7 @@ function initializeStrategies() {
         defaultKnowledgeStore = new KnowledgeStore();
     }
 
-    const services = getSkillServices();
+    const services = getServices();
     if (!simpleStrategyInstance) {
         simpleStrategyInstance = new SimpleLLmStrategy({
             knowledgeStore: defaultKnowledgeStore,

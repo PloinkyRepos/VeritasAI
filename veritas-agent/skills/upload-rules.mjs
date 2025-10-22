@@ -1,5 +1,5 @@
 import { resolveStrategy, tryGetLlmAgent, resolveResourceInput } from '../lib/skill-utils.mjs';
-import { getSkillServices } from '../lib/runtime.mjs';
+import { getServices } from '../lib/service-context.mjs';
 import {
     ensureUploadsRegisteredFromTask,
     getRegisteredUploads
@@ -10,7 +10,7 @@ function requireInput(value) {
     if (trimmed) {
         return { valid: true };
     }
-    const services = getSkillServices();
+    const services = getServices();
     const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
@@ -94,7 +94,7 @@ export async function action({input}) {
 
     const actions = [];
 
-    const services = getSkillServices();
+    const services = getServices();
     const workspaceDir = services?.workspaceDir || process.cwd();
     if (services?.task) {
         ensureUploadsRegisteredFromTask(services.task, { workspaceDir });

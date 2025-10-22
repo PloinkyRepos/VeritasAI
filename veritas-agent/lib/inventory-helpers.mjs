@@ -1,4 +1,4 @@
-import { getSkillServices } from './runtime.mjs';
+import { getServices } from './service-context.mjs';
 
 export function normalizeString(value) {
     return typeof value === 'string' ? value.trim() : '';
@@ -27,7 +27,7 @@ export function parseBooleanInput(value) {
 }
 
 async function fetchCollection(typeName, sortBy = 'name') {
-    const { client } = getSkillServices();
+    const { client } = getServices();
     const result = await client.execute('select', typeName, {}, { sortBy });
     return result?.objects || [];
 }
@@ -70,7 +70,7 @@ let jobsSnapshotPromise;
 async function loadJobsSnapshot() {
     if (!jobsSnapshotPromise) {
         const pending = (async () => {
-            const { client } = getSkillServices();
+            const { client } = getServices();
             const result = await client.execute('select', 'job', {}, { sortBy: 'job_id' });
             return result?.objects || [];
         })();
@@ -104,7 +104,7 @@ export async function resolveJobId(value) {
     if (!token) {
         return null;
     }
-    const { client } = getSkillServices();
+    const { client } = getServices();
     if (/^(\d{3})-(\d{4})$/.test(token)) {
         try {
             const res = await client.execute('select', 'job', { job_id: token });
@@ -137,7 +137,7 @@ export async function presentJobId(value) {
     if (!id) {
         return 'not provided';
     }
-    const { client } = getSkillServices();
+    const { client } = getServices();
     try {
         const res = await client.execute('select', 'job', { job_id: id });
         const job = res?.objects?.[0];
@@ -153,7 +153,7 @@ let areaSnapshotPromise;
 async function loadAreaSnapshot() {
     if (!areaSnapshotPromise) {
         const pending = (async () => {
-            const { client } = getSkillServices();
+            const { client } = getServices();
             const [areasResult, locationsResult] = await Promise.allSettled([
                 client.execute('select', 'area', {}, { sortBy: 'name' }),
                 client.execute('select', 'location', {}, { sortBy: 'name' })
@@ -207,7 +207,7 @@ export async function resolveAreaId(value) {
     if (!token) {
         return null;
     }
-    const { client } = getSkillServices();
+    const { client } = getServices();
     const checks = [
         client.execute('select', 'area', { area_id: token }),
         client.execute('select', 'area', { name: { contains: token, mode: 'insensitive' } }),
@@ -232,7 +232,7 @@ export async function presentAreaId(value) {
     if (!id) {
         return 'not provided';
     }
-    const { client } = getSkillServices();
+    const { client } = getServices();
     const lookups = [
         ['area', { area_id: id }],
         ['area', { name: id }],

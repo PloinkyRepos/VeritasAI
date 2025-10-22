@@ -1,4 +1,4 @@
-import { getSkillServices } from './runtime.mjs';
+import { getServices } from './service-context.mjs';
 
 /**
  * Transaction types for movement log entries
@@ -60,7 +60,7 @@ export async function createMovementLog({
     job_id = '',
     notes = ''
 }) {
-    const { client, user } = getSkillServices();
+    const { client, user } = getServices();
 
     const normalizedType = typeof item_type === 'string' ? item_type.trim().toLowerCase() : '';
     if (!SUPPORTED_ITEM_TYPES.includes(normalizedType)) {
@@ -116,7 +116,7 @@ export async function createMovementLog({
  * @param {Object} logEntry - The movement log entry to process
  */
 async function processMovementLogEntry(logEntry) {
-    const { client } = getSkillServices();
+    const { client } = getServices();
     const itemType = SUPPORTED_ITEM_TYPES.includes(logEntry?.item_type)
         ? logEntry.item_type
         : 'material';
@@ -196,7 +196,7 @@ async function processMovementLogEntry(logEntry) {
  * @returns {Promise<Array>} Array of movement log entries
  */
 export async function getItemMovementHistory(item_id) {
-    const { client } = getSkillServices();
+    const { client } = getServices();
     const result = await client.execute('select', 'movementLog', 
         { item_id }, 
         { sortBy: 'timestamp', descending: true }
@@ -211,7 +211,7 @@ export async function getItemMovementHistory(item_id) {
  * @returns {Promise<Array>} Array of movement log entries
  */
 export async function getJobMovementHistory(job_id) {
-    const { client } = getSkillServices();
+    const { client } = getServices();
     const result = await client.execute('select', 'movementLog', 
         { job_id }, 
         { sortBy: 'timestamp', descending: true }
