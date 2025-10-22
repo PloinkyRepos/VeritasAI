@@ -2,6 +2,10 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { getSkillServices } from '../runtime.mjs';
+import {
+    ensureUploadsRegisteredFromTask,
+    resolveUploadedFile
+} from '../upload-registry.mjs';
 
 const MAX_CONTEXT_ASPECTS = 30;
 const JSON_BLOCK_REGEX = /```json\s*([\s\S]*?)```/gi;
@@ -24,21 +28,49 @@ async function readResourceFile(resourceURL, logger) {
     if (!resourceURL) {
         return null;
     }
-    if (!isLikelyLocalPath(resourceURL)) {
+
+    const services = getSkillServices();
+    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    if (services?.task) {
+        ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
+    }
+
+    const uploadRecord = resolveUploadedFile(resourceURL);
+    const attemptPaths = [];
+    if (uploadRecord?.path) {
+        attemptPaths.push(uploadRecord.path);
+    }
+    if (isLikelyLocalPath(resourceURL)) {
+        attemptPaths.push(resourceURL);
+    } else if (!attemptPaths.length) {
         return null;
     }
-    try {
-        const resolved = path.resolve(resourceURL);
-        return await readFile(resolved, 'utf8');
-    } catch (error) {
-        if (logger) {
-            await logger('warn', 'simple-strategy-read-failed', {
-                resourceURL,
-                error: error.message
-            });
+
+    let lastError = null;
+    const tried = new Set();
+    for (const candidate of attemptPaths) {
+        if (!candidate) {
+            continue;
         }
-        return null;
+        const resolvedPath = path.resolve(candidate);
+        if (tried.has(resolvedPath)) {
+            continue;
+        }
+        tried.add(resolvedPath);
+        try {
+            return await readFile(resolvedPath, 'utf8');
+        } catch (error) {
+            lastError = error;
+        }
     }
+
+    if (logger && lastError) {
+        await logger('warn', 'simple-strategy-read-failed', {
+            resourceURL,
+            error: lastError.message
+        });
+    }
+    return null;
 }
 
 function tokenize(text = '') {

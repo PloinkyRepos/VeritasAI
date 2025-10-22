@@ -3,6 +3,10 @@ import path from 'node:path';
 
 import { getSkillServices } from './runtime.mjs';
 import { getStrategy } from './strategy-registry.mjs';
+import {
+    ensureUploadsRegisteredFromTask,
+    resolveUploadedFile
+} from './upload-registry.mjs';
 
 const STRATEGY_PREFERENCE = ['default', 'simple-llm', 'mock'];
 
@@ -46,6 +50,21 @@ export async function resolveResourceInput(value) {
     const trimmed = value.trim();
     if (!trimmed) {
         return { resourceURL: null, text: '' };
+    }
+
+    const services = getSkillServices();
+    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    if (services?.task) {
+        ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
+    }
+    const registeredUpload = resolveUploadedFile(trimmed);
+    if (registeredUpload?.path) {
+        try {
+            const text = await readFile(registeredUpload.path, 'utf8');
+            return { resourceURL: registeredUpload.path, text };
+        } catch {
+            // Fall back to legacy resolution paths.
+        }
     }
 
     if (!trimmed.includes('\n') && trimmed.length < 512) {

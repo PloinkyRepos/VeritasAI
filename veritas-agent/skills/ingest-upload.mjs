@@ -3,53 +3,10 @@ import path from 'node:path';
 
 import { getSkillServices } from '../lib/runtime.mjs';
 import { toSafeString } from '../lib/rag-helpers.mjs';
-
-const UPLOAD_MARKER = '[[uploaded-file]]';
-
-function stripPrefix(line) {
-    if (typeof line !== 'string') {
-        return '';
-    }
-    const trimmed = line.trimStart();
-    if (trimmed.startsWith(':')) {
-        return trimmed.slice(1).trimStart();
-    }
-    if (trimmed.startsWith('#')) {
-        return trimmed.slice(1).trimStart();
-    }
-    return trimmed;
-}
-
-function parseUploadMarkers(taskText) {
-    if (!taskText || typeof taskText !== 'string') {
-        return [];
-    }
-    return taskText
-        .split(/\r?\n/)
-        .map(line => stripPrefix(line))
-        .filter(line => line.startsWith(UPLOAD_MARKER))
-        .map(line => {
-            const jsonPart = line.slice(UPLOAD_MARKER.length).trim();
-            if (!jsonPart) {
-                return null;
-            }
-            try {
-                const parsed = JSON.parse(jsonPart);
-                return typeof parsed === 'object' && parsed !== null ? parsed : null;
-            } catch (_) {
-                return null;
-            }
-        })
-        .filter(Boolean)
-        .map((entry) => ({
-            id: toSafeString(entry.id),
-            name: toSafeString(entry.name),
-            url: toSafeString(entry.url),
-            size: typeof entry.size === 'number' ? entry.size : null,
-            mime: toSafeString(entry.mime)
-        }))
-        .filter(entry => entry.id);
-}
+import {
+    ensureUploadsRegisteredFromTask,
+    registerUploadedEntries
+} from '../lib/upload-registry.mjs';
 
 function isTextLikeFile({ mime, name }) {
     const lowered = (mime || '').toLowerCase();
@@ -116,14 +73,16 @@ export async function action({ blobId } = {}) {
         throw new Error('LlamaIndex context is unavailable.');
     }
 
-    const uploads = parseUploadMarkers(task);
+    const workspaceDir = llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    const uploads = ensureUploadsRegisteredFromTask(task, { workspaceDir });
     let targetEntries = uploads;
 
     if (blobId) {
         const safeId = toSafeString(blobId);
         targetEntries = uploads.filter(entry => entry.id === safeId);
         if (!targetEntries.length) {
-            targetEntries = [{ id: safeId, name: null, url: null, mime: null }];
+            targetEntries = [{ id: safeId, name: null, url: null, mime: null, size: null }];
+            registerUploadedEntries(targetEntries, { workspaceDir });
         }
     }
 
