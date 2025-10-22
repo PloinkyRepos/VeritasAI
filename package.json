@@ -1,6 +1,6 @@
 {
     "name": "veritas-ai",
     "dependencies": {
-        "llamaindex": "^0.12.0"
+        "ploinky-agent-lib": "file:../ploinky/node_modules/ploinkyAgentLib"
     }
 }
