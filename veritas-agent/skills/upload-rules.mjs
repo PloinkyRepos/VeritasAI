@@ -1,11 +1,23 @@
 import { resolveStrategy, tryGetLlmAgent } from '../lib/skill-utils.mjs';
+import { getSkillServices } from '../lib/runtime.mjs';
+import {
+    ensureUploadsRegisteredFromTask,
+    getRegisteredUploads
+} from '../lib/upload-registry.mjs';
 
 function requireRulesOrFacts(value, {file, rules, facts}) {
-    const hasContent = file || rules || facts;
-    if (!hasContent) {
-        return {valid: false, reason: 'Please provide rules or facts to upload, either directly or in a file.'};
+    if (file || rules || facts) {
+        return {valid: true};
     }
-    return {valid: true};
+    const services = getSkillServices();
+    const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+    if (services?.task) {
+        ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
+    }
+    if (getRegisteredUploads().length) {
+        return {valid: true};
+    }
+    return {valid: false, reason: 'Please provide rules or facts to upload, either directly or in a file.'};
 }
 
 function fallbackReport(actions) {
@@ -97,15 +109,36 @@ export async function action({file, rules, facts, source}) {
 
     const actions = [];
 
-    if (file) {
-        const detected = await strategy.detectRelevantAspectsFromSingleFile(file, source || '');
+    let selectedFile = typeof file === 'string' ? file.trim() : '';
+    let selectedFileLabel = selectedFile;
+
+    if (!selectedFile) {
+        const services = getSkillServices();
+        const workspaceDir = services?.llamaIndex?.workspaceDir || process.env.PLOINKY_WORKSPACE_DIR || process.cwd();
+        if (services?.task) {
+            ensureUploadsRegisteredFromTask(services.task, { workspaceDir });
+        }
+        const uploads = getRegisteredUploads();
+        if (uploads.length) {
+            const latestUpload = uploads[uploads.length - 1];
+            selectedFile = latestUpload.path || latestUpload.url || latestUpload.id;
+            selectedFileLabel = latestUpload.name || latestUpload.url || latestUpload.id || selectedFile;
+        }
+    }
+
+    if (selectedFile) {
+        const detected = await strategy.detectRelevantAspectsFromSingleFile(selectedFile, source || '');
         const enriched = detected.map(aspect => ({
             ...aspect,
-            source: aspect.source || source || file
+            source: aspect.source || source || selectedFile
         }));
         if (enriched.length) {
-            await knowledgeStore.replaceResource(file, enriched, { statement: source || '', defaultType: 'fact' });
-            actions.push({ label: file, type: 'file', aspects: enriched });
+            await knowledgeStore.replaceResource(selectedFile, enriched, { statement: source || '', defaultType: 'fact' });
+            actions.push({
+                label: selectedFileLabel || selectedFile,
+                type: 'file',
+                aspects: enriched
+            });
         }
     }
 
